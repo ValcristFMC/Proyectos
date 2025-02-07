@@ -1,0 +1,1242 @@
+USE [Jiricuicho]
+GO
+
+/****** Object:  Table [dbo].[tbl_Usuarios]    Script Date: 07/01/2025 08:16:52 p. m. ******/
+SET ANSI_NULLS ON
+GO
+
+SET QUOTED_IDENTIFIER ON
+GO
+
+CREATE TABLE [dbo].[tbl_Usuarios](
+	[idUsuario] [int] IDENTITY(1,1) NOT NULL,
+	[idPuesto] [int] NULL,
+	[idEmpleado] [int] NULL,
+	[Usuario] [varchar](12) NULL,
+	[Estatus] [bit] NULL,
+	[Contraseña] [varchar](8) NULL,
+PRIMARY KEY CLUSTERED 
+(
+	[idUsuario] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+) ON [PRIMARY]
+GO
+
+USE [Jiricuicho]
+GO
+
+/****** Object:  Table [dbo].[tbl_PermisoUsuario]    Script Date: 07/01/2025 08:16:45 p. m. ******/
+SET ANSI_NULLS ON
+GO
+
+SET QUOTED_IDENTIFIER ON
+GO
+
+CREATE TABLE [dbo].[tbl_PermisoUsuario](
+	[idUsuario] [int] NULL,
+	[Clave] [varchar](8) NULL
+) ON [PRIMARY]
+GO
+
+
+USE [Jiricuicho]
+GO
+
+/****** Object:  Table [dbo].[tbl_Archivos]    Script Date: 07/01/2025 08:15:58 p. m. ******/
+SET ANSI_NULLS ON
+GO
+
+SET QUOTED_IDENTIFIER ON
+GO
+
+CREATE TABLE [dbo].[tbl_Archivos](
+	[idArchivos] [int] IDENTITY(1,1) NOT NULL,
+	[NumeroGuia] [varchar](12) NULL,
+	[NumeroConsignatario] [varchar](7) NULL,
+	[NumeroCajas] [int] NULL,
+	[Pares] [int] NULL,
+	[Ciudad] [varchar](50) NULL,
+	[NumeroArchivo] [int] NULL,
+	[Estatus] [bit] NULL,
+	[Fecha] [datetime] NULL,
+	[Nombre] [varchar](25) NULL,
+PRIMARY KEY CLUSTERED 
+(
+	[idArchivos] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+) ON [PRIMARY]
+GO
+
+ALTER TABLE [dbo].[tbl_Archivos] ADD  CONSTRAINT [DF_tbl_Archivos_NumeroArchivo]  DEFAULT ((0)) FOR [NumeroArchivo]
+GO
+
+
+USE [Jiricuicho]
+GO
+
+/****** Object:  Table [dbo].[tbl_Tipos]    Script Date: 07/01/2025 08:17:09 p. m. ******/
+SET ANSI_NULLS ON
+GO
+
+SET QUOTED_IDENTIFIER ON
+GO
+
+CREATE TABLE [dbo].[tbl_Tipos](
+	[idTipo] [int] IDENTITY(1,1) NOT NULL,
+	[Estatus] [bit] NULL,
+	[Descripcion] [varchar](50) NULL,
+	[Nombre] [varchar](50) NULL,
+	[Simbolo] [varchar](50) NULL,
+	[Equivalencia] [varchar](50) NULL,
+	[Usuario] [varchar](12) NULL,
+PRIMARY KEY CLUSTERED 
+(
+	[idTipo] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+) ON [PRIMARY]
+GO
+
+
+USE [Jiricuicho]
+GO
+/****** Object:  StoredProcedure [dbo].[usp_ConsultarListaArchivos]    Script Date: 07/01/2025 08:15:28 p. m. ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+
+-- ====================
+-- Descripción:         <Consulta los archivos disponibles y sus datos>
+-- ====================
+/**********************
+exec usp_ConsultarListaArchivos
+@Usuario			= 'mcfer'
+**********************/
+
+/*
+Modificaciones:
+No.    Fecha          Autor                             Descripción
+---    -----          -----                             -----------
+> 1    22/12/2024     Fernando Morales Castillo         Creación
+*/
+ALTER procedure [dbo].[usp_ConsultarListaArchivos]
+
+/* Parametros */
+@Usuario varchar(8)
+
+as
+begin
+    SET NOCOUNT ON;
+    begin try
+        begin transaction
+
+		select distinct
+			NumeroArchivo
+			, Nombre
+			, Estatus
+			, Fecha
+		from
+			dbo.tbl_Archivos
+		where
+			Estatus = 0
+
+		commit transaction
+    end try
+    begin catch
+        
+		if XACT_STATE() <> 0
+		begin
+			rollback
+		end
+
+        insert into Jiricuicho.dbo.tbl_LogError
+		select
+			Usuario = @Usuario
+			, Proceso = 'Jiricuicho.dbo.usp_ConsultarListaArchivos'
+			, Fecha = getdate()
+			, ErrorNumber = ERROR_NUMBER()  
+			, ErrorSeverity = ERROR_SEVERITY()
+			, ErrorState = ERROR_STATE()
+			, ErrorProcedure = ERROR_PROCEDURE()
+			, ErrorLine = ERROR_LINE()
+			, ErrorMessage = ERROR_MESSAGE()
+		
+		where
+			@Usuario <> ''
+
+		select
+			ErrorNumber = ERROR_NUMBER()
+			, Usuario = @Usuario
+			, Proceso = 'Jiricuicho.dbo.usp_ConsultarListaArchivos'
+			, Fecha = getdate()
+			, ErrorSeverity = ERROR_SEVERITY()
+			, ErrorState = ERROR_STATE()
+			, ErrorProcedure = ERROR_PROCEDURE()
+			, ErrorLine = ERROR_LINE()
+			, ErrorMessage = ERROR_MESSAGE()
+
+    end catch
+end
+
+
+USE [Jiricuicho]
+GO
+
+/****** Object:  Table [dbo].[tbl_Empleados]    Script Date: 07/01/2025 08:18:21 p. m. ******/
+SET ANSI_NULLS ON
+GO
+
+SET QUOTED_IDENTIFIER ON
+GO
+
+CREATE TABLE [dbo].[tbl_Empleados](
+	[idEmpleado] [int] IDENTITY(1,1) NOT NULL,
+	[Clave] [varchar](10) NULL,
+	[idPuesto] [int] NULL,
+	[Estatus] [bit] NULL,
+	[Nombre] [varchar](20) NULL,
+	[ApellidoPaterno] [varchar](20) NULL,
+	[ApellidoMaterno] [varchar](20) NULL,
+	[idDireccion] [int] NULL,
+	[Telefono] [varchar](10) NULL,
+	[CorreoElectronico] [varchar](150) NULL,
+	[FechaIngreso] [datetime] NULL,
+	[FechaModificacion] [datetime] NULL,
+	[NSS] [varchar](11) NULL,
+	[RFC] [varchar](13) NULL,
+	[CertSitFiscal] [varchar](max) NULL,
+	[Nomina] [float] NULL,
+	[ClaveBancaria] [varchar](16) NULL,
+	[Banco] [varchar](150) NULL,
+	[Usuario] [varchar](12) NULL,
+PRIMARY KEY CLUSTERED 
+(
+	[idEmpleado] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+) ON [PRIMARY] TEXTIMAGE_ON [PRIMARY]
+GO
+
+USE [Jiricuicho]
+GO
+/****** Object:  StoredProcedure [dbo].[usp_ConsultarArchivo]    Script Date: 07/01/2025 08:15:34 p. m. ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+
+-- ====================
+-- Descripción:         <Consulta los talones disponibles de un archivo>
+-- ====================
+/**********************
+exec usp_ConsultarArchivo
+@Usuario			= 'mcfer'
+, @NumeroArchivo	= 1
+, @Fecha			= '2024-12-31'
+**********************/
+
+/*
+Modificaciones:
+No.    Fecha          Autor                             Descripción
+---    -----          -----                             -----------
+> 1    22/12/2024     Fernando Morales Castillo         Creación
+*/
+ALTER procedure [dbo].[usp_ConsultarArchivo]
+
+/* Parametros */
+@Usuario varchar(8)
+, @NumeroArchivo int
+, @Fecha date
+
+as
+begin
+    SET NOCOUNT ON;
+    begin try
+        begin transaction
+
+		select distinct
+			idArchivos
+			, NumeroGuia
+			, NumeroConsignatario
+			, NumeroCajas
+			, Pares
+			, Ciudad
+			, NumeroArchivo
+			, Estatus
+			, Fecha
+			, Nombre
+		from
+			dbo.tbl_Archivos
+		where
+			Estatus = 0
+		and
+			NumeroArchivo = @NumeroArchivo
+		and
+			Fecha between @Fecha and dateadd(day, 1, @Fecha)
+
+		commit transaction
+    end try
+    begin catch
+        
+		if XACT_STATE() <> 0
+		begin
+			rollback
+		end
+
+        insert into Jiricuicho.dbo.tbl_LogError
+		select
+			Usuario = @Usuario
+			, Proceso = 'Jiricuicho.dbo.usp_ConsultarArchivo'
+			, Fecha = getdate()
+			, ErrorNumber = ERROR_NUMBER()  
+			, ErrorSeverity = ERROR_SEVERITY()
+			, ErrorState = ERROR_STATE()
+			, ErrorProcedure = ERROR_PROCEDURE()
+			, ErrorLine = ERROR_LINE()
+			, ErrorMessage = ERROR_MESSAGE()
+		
+		where
+			@Usuario <> ''
+
+		select
+			ErrorNumber = ERROR_NUMBER()
+			, Usuario = @Usuario
+			, Proceso = 'Jiricuicho.dbo.usp_ConsultarArchivo'
+			, Fecha = getdate()
+			, ErrorSeverity = ERROR_SEVERITY()
+			, ErrorState = ERROR_STATE()
+			, ErrorProcedure = ERROR_PROCEDURE()
+			, ErrorLine = ERROR_LINE()
+			, ErrorMessage = ERROR_MESSAGE()
+
+    end catch
+end
+
+
+
+USE [Jiricuicho]
+GO
+/****** Object:  StoredProcedure [dbo].[usp_ConsultarPermisos]    Script Date: 07/01/2025 08:15:21 p. m. ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+
+-- ====================
+-- Descripción:         <Consulta los tipos>
+-- ====================
+
+/*
+Modificaciones:
+No.    Fecha          Autor                             Descripción
+---    -----          -----                             -----------
+> 1    08/07/2024     Fernando Morales Castillo         Creación
+*/
+ALTER procedure [dbo].[usp_ConsultarPermisos]
+
+/* Parametros */
+@Usuario varchar(8)
+
+as
+begin
+    SET NOCOUNT ON;
+
+    begin try
+        begin transaction
+
+            select
+				idPermiso
+				, Clave
+				, Descripcion
+				, Estatus
+			from
+				dbo.tbl_Permisos
+
+		commit transaction
+    end try
+    begin catch
+        
+		if XACT_STATE() <> 0
+		begin
+			rollback
+		end
+
+        insert into Jiricuicho.dbo.tbl_LogError
+		select
+			Usuario				= @Usuario
+			, Proceso			= 'Jiricuicho.dbo.usp_ConsultarPermisos'
+			, Fecha				= getdate()
+			, ErrorNumber		= ERROR_NUMBER()  
+			, ErrorSeverity		= ERROR_SEVERITY()
+			, ErrorState		= ERROR_STATE()
+			, ErrorProcedure	= ERROR_PROCEDURE()
+			, ErrorLine			= ERROR_LINE()
+			, ErrorMessage		= ERROR_MESSAGE()
+		
+		where
+			@Usuario <> ''
+
+		select
+			ErrorNumber			= ERROR_NUMBER()
+			, Usuario			= @Usuario
+			, Proceso			= 'Jiricuicho.dbo.usp_ConsultarPermisos'
+			, Fecha				= getdate()
+			, ErrorSeverity		= ERROR_SEVERITY()
+			, ErrorState		= ERROR_STATE()
+			, ErrorProcedure	= ERROR_PROCEDURE()
+			, ErrorLine			= ERROR_LINE()
+			, ErrorMessage		= ERROR_MESSAGE()
+
+    end catch
+end
+
+USE [Jiricuicho]
+GO
+/****** Object:  StoredProcedure [dbo].[usp_ConsultarPuestos]    Script Date: 07/01/2025 08:15:15 p. m. ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+
+-- ====================
+-- Descripción:         <Consulta los tipos>
+-- ====================
+
+/*
+Modificaciones:
+No.    Fecha          Autor                             Descripción
+---    -----          -----                             -----------
+> 1    08/07/2024     Fernando Morales Castillo         Creación
+*/
+ALTER procedure [dbo].[usp_ConsultarPuestos]
+
+/* Parametros */
+@Usuario varchar(8)
+
+as
+begin
+    SET NOCOUNT ON;
+
+    begin try
+        begin transaction
+
+            select
+				idPuesto
+				, Clave
+				, Descripcion
+			from
+				Jiricuicho.dbo.tbl_Puestos
+
+		commit transaction
+    end try
+    begin catch
+        
+		if XACT_STATE() <> 0
+		begin
+			rollback
+		end
+
+        insert into Jiricuicho.dbo.tbl_LogError
+		select
+			Usuario				= @Usuario
+			, Proceso			= 'Jiricuicho.dbo.usp_ConsultarPuestos'
+			, Fecha				= getdate()
+			, ErrorNumber		= ERROR_NUMBER()  
+			, ErrorSeverity		= ERROR_SEVERITY()
+			, ErrorState		= ERROR_STATE()
+			, ErrorProcedure	= ERROR_PROCEDURE()
+			, ErrorLine			= ERROR_LINE()
+			, ErrorMessage		= ERROR_MESSAGE()
+		
+		where
+			@Usuario <> ''
+
+		select
+			ErrorNumber			= ERROR_NUMBER()
+			, Usuario			= @Usuario
+			, Proceso			= 'Jiricuicho.dbo.usp_ConsultarPuestos'
+			, Fecha				= getdate()
+			, ErrorSeverity		= ERROR_SEVERITY()
+			, ErrorState		= ERROR_STATE()
+			, ErrorProcedure	= ERROR_PROCEDURE()
+			, ErrorLine			= ERROR_LINE()
+			, ErrorMessage		= ERROR_MESSAGE()
+
+    end catch
+end
+
+USE [Jiricuicho]
+GO
+/****** Object:  StoredProcedure [dbo].[usp_ConsultarUsuario]    Script Date: 07/01/2025 08:15:11 p. m. ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+
+-- ====================
+-- Descripción:         <Consulta los datos del usuario>
+-- ====================
+
+/*
+Modificaciones:
+No.    Fecha          Autor                             Descripción
+---    -----          -----                             -----------
+> 1    08/07/2024     Fernando Morales Castillo         Creación
+*/
+ALTER procedure [dbo].[usp_ConsultarUsuario]
+
+/* Parametros */
+
+@Estatus	bit
+, @Usuario	varchar(12)
+
+as
+begin
+    SET NOCOUNT ON;
+
+    begin try
+        begin transaction
+
+            select
+				idUsuario
+				, idPuesto
+				, idEmpleado
+				, Usuario
+				, Estatus
+				, Contraseña
+			from
+				Jiricuicho.dbo.tbl_Usuarios
+			where
+				Usuario = @Usuario
+			and
+				Estatus = @Estatus
+
+		commit transaction
+    end try
+    begin catch
+        
+		if XACT_STATE() <> 0
+		begin
+			rollback
+		end
+
+        insert into Jiricuicho.dbo.tbl_LogError
+		select
+			Usuario = @Usuario
+			, Proceso = 'Jiricuicho.dbo.usp_ConsultarUsuario'
+			, Fecha = getdate()
+			, ErrorNumber = ERROR_NUMBER()  
+			, ErrorSeverity = ERROR_SEVERITY()
+			, ErrorState = ERROR_STATE()
+			, ErrorProcedure = ERROR_PROCEDURE()
+			, ErrorLine = ERROR_LINE()
+			, ErrorMessage = ERROR_MESSAGE()
+		
+		where
+			@Usuario <> ''
+
+		select
+			ErrorNumber = ERROR_NUMBER()
+			, Usuario = @Usuario
+			, Proceso = 'Jiricuicho.dbo.usp_ConsultarUsuario'
+			, Fecha = getdate()
+			, ErrorSeverity = ERROR_SEVERITY()
+			, ErrorState = ERROR_STATE()
+			, ErrorProcedure = ERROR_PROCEDURE()
+			, ErrorLine = ERROR_LINE()
+			, ErrorMessage = ERROR_MESSAGE()
+
+    end catch
+end
+
+USE [Jiricuicho]
+GO
+/****** Object:  StoredProcedure [dbo].[usp_GuardarCliente]    Script Date: 07/01/2025 08:15:05 p. m. ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+
+-- ====================
+-- Descripción:         <Guarda un cliente nuevo>
+-- ====================
+
+/*
+Modificaciones:
+No.    Fecha          Autor                             Descripción
+---    -----          -----                             -----------
+> 1    08/07/2024     Fernando Morales Castillo         Creación
+*/
+ALTER procedure [dbo].[usp_GuardarCliente]
+
+/* Parametros */
+	@Nombre varchar(50)
+	, @ApellidoPaterno varchar(50)
+	, @ApellidoMaterno varchar(50)
+	, @RazonSocial varchar(150)
+	, @RFC varchar(13)
+	, @Telefono varchar(10)
+	, @CorreoElectronico varchar(150)
+	, @Usuario varchar(50)
+	, @idDireccion int
+as
+begin
+    SET NOCOUNT ON;
+
+    begin try
+        begin transaction
+
+            insert into dbo.tbl_Clientes
+			(
+				Estatus
+				, Nombre
+				, ApellidoPaterno
+				, ApellidoMaterno
+				, RazonSocial
+				, RFC
+				, Telefono
+				, CorreoElectronico
+				, FechaAlta
+				, idDireccion
+				, Usuario
+			) values
+			(
+				1
+				, @Nombre
+				, @ApellidoPaterno
+				, @ApellidoMaterno
+				, @RazonSocial
+				, @RFC
+				, @Telefono
+				, @CorreoElectronico
+				, getdate()
+				, @idDireccion
+				, @Usuario
+			)
+
+			select
+				idCliente
+				, Estatus
+				, Nombre
+				, ApellidoPaterno
+				, ApellidoMaterno
+				, RazonSocial
+				, RFC
+				, Telefono
+				, CorreoElectronico
+				, FechaAlta
+				, FechaBaja
+				, FechaModificacion
+				, Usuario
+			from
+				dbo.tbl_Clientes
+			where
+				Estatus = 'A'
+
+		commit transaction
+    end try
+    begin catch
+        
+		if XACT_STATE() <> 0
+		begin
+			rollback
+		end
+
+        insert into dbo.tbl_LogError
+		select
+			Usuario = @Usuario
+			, Proceso = 'dbo.usp_GuardarCliente'
+			, Fecha = getdate()
+			, ErrorNumber = ERROR_NUMBER()  
+			, ErrorSeverity = ERROR_SEVERITY()
+			, ErrorState = ERROR_STATE()
+			, ErrorProcedure = ERROR_PROCEDURE()
+			, ErrorLine = ERROR_LINE()
+			, ErrorMessage = ERROR_MESSAGE()
+		
+		where
+			@Usuario <> ''
+
+		select
+			ErrorNumber = ERROR_NUMBER()
+			, Usuario = @Usuario
+			, Proceso = 'dbo.usp_GuardarCliente'
+			, Fecha = getdate()
+			, ErrorSeverity = ERROR_SEVERITY()
+			, ErrorState = ERROR_STATE()
+			, ErrorProcedure = ERROR_PROCEDURE()
+			, ErrorLine = ERROR_LINE()
+			, ErrorMessage = ERROR_MESSAGE()
+
+    end catch
+end
+
+USE [Jiricuicho]
+GO
+/****** Object:  StoredProcedure [dbo].[usp_GuardarEmpleado]    Script Date: 07/01/2025 08:14:40 p. m. ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+
+-- ====================
+-- Descripción:         <Guarda un Empleado nuevo>
+-- ====================
+
+/*
+Modificaciones:
+No.    Fecha          Autor                             Descripción
+---    -----          -----                             -----------
+> 1    08/07/2024     Fernando Morales Castillo         Creación
+*/
+ALTER procedure [dbo].[usp_GuardarEmpleado]
+
+/* Parametros */
+
+--Empleado
+	@Clave					varchar(10)
+	, @idPuesto				int
+	, @Estatus				bit
+	, @Nombre				varchar(20)
+	, @ApellidoPaterno		varchar(20)
+	, @ApellidoMaterno		varchar(20)
+	, @Telefono				varchar(10)
+	, @CorreoElectronico	varchar(150)
+	, @FechaIngreso			datetime
+	, @NSS					varchar(11)
+	, @RFC					varchar(13)
+	, @Nomina				float
+	, @ClaveBancaria		varchar(16)
+	, @Banco				varchar(150)
+	, @Usuario				varchar(12)
+
+--Direccion
+	, @Fiscal				bit
+	, @CP					varchar(5)
+	, @Estado				varchar(3)
+	, @Municipio			varchar(3)
+	, @Calle				varchar(150)
+	, @NumeroInt			varchar(8)
+	, @NumeroExt			varchar(8)
+	, @Colonia				varchar(3)
+	, @Ciudad				varchar(3)
+	, @Pais					varchar(3)
+
+--Usuario
+	, @NombreUsuario		varchar(12)
+	, @EstatusUsuario		bit
+	, @Contraseña			varchar(8)
+
+	
+as
+begin
+    SET NOCOUNT ON;
+
+    begin try
+        begin transaction
+			
+			declare @idDireccion	int
+			declare @idUsuario		int
+			declare @idEmpleado		int
+
+			insert into dbo.tbl_Direcciones
+			(
+				Fiscal
+				, CP
+				, Estado
+				, Municipio
+				, Calle
+				, NumeroInt
+				, NumeroExt
+				, Colonia
+				, Ciudad
+				, Pais
+			) values
+			(
+				@Fiscal
+				, @CP
+				, @Estado
+				, @Municipio
+				, @Calle
+				, @NumeroInt
+				, @NumeroExt
+				, @Colonia
+				, @Ciudad
+				, @Pais
+			)
+
+			set @idDireccion = (select SCOPE_IDENTITY())
+
+            insert into dbo.tbl_Empleados
+			(
+				Clave
+				, idPuesto
+				, Estatus
+				, Nombre
+				, ApellidoPaterno
+				, ApellidoMaterno
+				, idDireccion
+				, Telefono
+				, CorreoElectronico
+				, FechaIngreso
+				, NSS
+				, RFC
+				, Nomina
+				, ClaveBancaria
+				, Banco
+				, Usuario
+			) values
+			(
+				@Clave
+				, @idPuesto
+				, @Estatus
+				, @Nombre
+				, @ApellidoPaterno
+				, @ApellidoMaterno
+				, @idDireccion
+				, @Telefono
+				, @CorreoElectronico
+				, @FechaIngreso
+				, @NSS
+				, @RFC
+				, @Nomina
+				, @ClaveBancaria
+				, @Banco
+				, @Usuario
+			)
+
+			set @idEmpleado = (select SCOPE_IDENTITY())
+
+			insert into dbo.tbl_Usuarios
+			(
+				idPuesto
+				, idEmpleado
+				, Usuario
+				, Estatus
+				, Contraseña
+			) values
+			(
+				@idPuesto
+				, @idEmpleado
+				, @NombreUsuario
+				, @EstatusUsuario
+				, @Contraseña
+			)
+
+			set @idUsuario = (select SCOPE_IDENTITY())
+
+			select
+				idDireccion		= @idDireccion
+				, idUsuario		= @idUsuario
+				, idEmpleado	= @idEmpleado
+
+		commit transaction
+    end try
+    begin catch
+        
+		if XACT_STATE() <> 0
+		begin
+			rollback
+		end
+
+        insert into dbo.tbl_LogError
+		select
+			Usuario = @Usuario
+			, Proceso = 'dbo.usp_GuardarEmpleado'
+			, Fecha = getdate()
+			, ErrorNumber = ERROR_NUMBER()  
+			, ErrorSeverity = ERROR_SEVERITY()
+			, ErrorState = ERROR_STATE()
+			, ErrorProcedure = ERROR_PROCEDURE()
+			, ErrorLine = ERROR_LINE()
+			, ErrorMessage = ERROR_MESSAGE()
+		
+		where
+			@Usuario <> ''
+
+		select
+			ErrorNumber = ERROR_NUMBER()
+			, Usuario = @Usuario
+			, Proceso = 'dbo.usp_GuardarEmpleado'
+			, Fecha = getdate()
+			, ErrorSeverity = ERROR_SEVERITY()
+			, ErrorState = ERROR_STATE()
+			, ErrorProcedure = ERROR_PROCEDURE()
+			, ErrorLine = ERROR_LINE()
+			, ErrorMessage = ERROR_MESSAGE()
+
+    end catch
+end
+
+USE [Jiricuicho]
+GO
+/****** Object:  StoredProcedure [dbo].[usp_GuardarPermisoUsuario]    Script Date: 07/01/2025 08:14:31 p. m. ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+
+-- ====================
+-- Descripción:         <Guarda los permisos de Usuario nuevo>
+-- ====================
+
+/*
+Modificaciones:
+No.    Fecha          Autor                             Descripción
+---    -----          -----                             -----------
+> 1    08/07/2024     Fernando Morales Castillo         Creación
+*/
+ALTER procedure [dbo].[usp_GuardarPermisoUsuario]
+
+/* Parametros */
+
+--Empleado
+	@idUsuario		int
+	, @idPermiso	int
+	, @Usuario		varchar(12)
+	
+as
+begin
+    SET NOCOUNT ON;
+
+    begin try
+        begin transaction
+			
+			insert into dbo.tbl_PermisoUsuario
+			(
+				idUsuario
+				, Clave
+			) values
+			(
+				@idUsuario
+				, @idPermiso
+			)
+
+		commit transaction
+    end try
+    begin catch
+        
+		if XACT_STATE() <> 0
+		begin
+			rollback
+		end
+
+        insert into dbo.tbl_LogError
+		select
+			Usuario = @Usuario
+			, Proceso = 'dbo.usp_GuardarPermisoUsuario'
+			, Fecha = getdate()
+			, ErrorNumber = ERROR_NUMBER()  
+			, ErrorSeverity = ERROR_SEVERITY()
+			, ErrorState = ERROR_STATE()
+			, ErrorProcedure = ERROR_PROCEDURE()
+			, ErrorLine = ERROR_LINE()
+			, ErrorMessage = ERROR_MESSAGE()
+		
+		where
+			@Usuario <> ''
+
+		select
+			ErrorNumber = ERROR_NUMBER()
+			, Usuario = @Usuario
+			, Proceso = 'dbo.usp_GuardarPermisoUsuario'
+			, Fecha = getdate()
+			, ErrorSeverity = ERROR_SEVERITY()
+			, ErrorState = ERROR_STATE()
+			, ErrorProcedure = ERROR_PROCEDURE()
+			, ErrorLine = ERROR_LINE()
+			, ErrorMessage = ERROR_MESSAGE()
+
+    end catch
+end
+
+
+
+USE [Jiricuicho]
+GO
+/****** Object:  StoredProcedure [dbo].[usp_ValidarArchivo]    Script Date: 07/01/2025 08:14:11 p. m. ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+
+-- ====================
+-- Descripción:         <Verifica el archivo y sus datos>
+-- ====================
+/**********************
+exec usp_ValidarArchivo
+@Usuario			= 'mcfer'
+, @DatosArchivo		= 
+**********************/
+
+/*
+Modificaciones:
+No.    Fecha          Autor                             Descripción
+---    -----          -----                             -----------
+> 1    04/12/2024     Fernando Morales Castillo         Creación
+*/
+ALTER procedure [dbo].[usp_ValidarArchivo]
+
+/* Parametros */
+@Usuario varchar(8)
+, @DatosArchivo DatosArchivo readonly
+
+as
+begin
+    SET NOCOUNT ON;
+		
+    begin try
+        begin transaction
+
+			select * from @DatosArchivo
+			where NumeroGuia not in (select NumeroGuia from dbo.tbl_Archivos)
+
+		commit transaction
+    end try
+    begin catch
+        
+		if XACT_STATE() <> 0
+		begin
+			rollback
+		end
+
+        insert into Jiricuicho.dbo.tbl_LogError
+		select
+			Usuario = @Usuario
+			, Proceso = 'Jiricuicho.dbo.usp_ValidarArchivo'
+			, Fecha = getdate()
+			, ErrorNumber = ERROR_NUMBER()  
+			, ErrorSeverity = ERROR_SEVERITY()
+			, ErrorState = ERROR_STATE()
+			, ErrorProcedure = ERROR_PROCEDURE()
+			, ErrorLine = ERROR_LINE()
+			, ErrorMessage = ERROR_MESSAGE()
+		
+		where
+			@Usuario <> ''
+
+		select
+			ErrorNumber = ERROR_NUMBER()
+			, Usuario = @Usuario
+			, Proceso = 'Jiricuicho.dbo.usp_ValidarArchivo'
+			, Fecha = getdate()
+			, ErrorSeverity = ERROR_SEVERITY()
+			, ErrorState = ERROR_STATE()
+			, ErrorProcedure = ERROR_PROCEDURE()
+			, ErrorLine = ERROR_LINE()
+			, ErrorMessage = ERROR_MESSAGE()
+
+    end catch
+end
+
+
+USE [Jiricuicho]
+GO
+/****** Object:  StoredProcedure [dbo].[usp_VerificaSesion]    Script Date: 07/01/2025 08:14:09 p. m. ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+
+-- ====================
+-- Descripción:         <Verifica la sesion del usuario para dar acceso al sistema>
+-- ====================
+/**********************
+exec usp_VerificaSesion
+@Usuario		= 'mcfer'
+, @Contraseña	= 'fmc23*'
+**********************/
+
+/*
+Modificaciones:
+No.    Fecha          Autor                             Descripción
+---    -----          -----                             -----------
+> 1    08/07/2024     Fernando Morales Castillo         Creación
+*/
+ALTER procedure [dbo].[usp_VerificaSesion]
+
+/* Parametros */
+
+@Contraseña varchar(8)
+, @Usuario varchar(12)
+
+as
+begin
+    SET NOCOUNT ON;
+
+    begin try
+        begin transaction
+
+            select
+				idUsuario
+				, idPuesto
+				, idEmpleado
+				, Usuario
+				, Estatus
+				, Contraseña
+			from
+				Jiricuicho.dbo.tbl_Usuarios
+			where
+				Usuario = @Usuario
+			and
+				Contraseña = @Contraseña
+			and
+				Estatus = 1
+
+		commit transaction
+    end try
+    begin catch
+        
+		if XACT_STATE() <> 0
+		begin
+			rollback
+		end
+
+        insert into Jiricuicho.dbo.tbl_LogError
+		select
+			Usuario = @Usuario
+			, Proceso = 'Jiricuicho.dbo.usp_VerificaSesion'
+			, Fecha = getdate()
+			, ErrorNumber = ERROR_NUMBER()  
+			, ErrorSeverity = ERROR_SEVERITY()
+			, ErrorState = ERROR_STATE()
+			, ErrorProcedure = ERROR_PROCEDURE()
+			, ErrorLine = ERROR_LINE()
+			, ErrorMessage = ERROR_MESSAGE()
+		
+		where
+			@Usuario <> ''
+
+		select
+			ErrorNumber = ERROR_NUMBER()
+			, Usuario = @Usuario
+			, Proceso = 'Jiricuicho.dbo.usp_VerificaSesion'
+			, Fecha = getdate()
+			, ErrorSeverity = ERROR_SEVERITY()
+			, ErrorState = ERROR_STATE()
+			, ErrorProcedure = ERROR_PROCEDURE()
+			, ErrorLine = ERROR_LINE()
+			, ErrorMessage = ERROR_MESSAGE()
+
+    end catch
+end
+
+USE [Jiricuicho]
+GO
+/****** Object:  StoredProcedure [dbo].[usp_CargarArchivo]    Script Date: 07/01/2025 08:14:02 p. m. ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+
+-- ====================
+-- Descripción:         <Verifica el archivo y sus datos>
+-- ====================
+/**********************
+exec usp_CargarArchivo
+@Usuario			= 'mcfer'
+, @TablaArchivo		= 
+**********************/
+
+/*
+Modificaciones:
+No.    Fecha          Autor                             Descripción
+---    -----          -----                             -----------
+> 1    22/12/2024     Fernando Morales Castillo         Creación
+*/
+ALTER procedure [dbo].[usp_CargarArchivo]
+
+/* Parametros */
+@Usuario varchar(8)
+, @TablaArchivo DatosArchivo readonly
+
+as
+begin
+    SET NOCOUNT ON;
+    begin try
+        begin transaction
+
+		declare @ArchivoNumeroConsignatario as table
+		(
+			NumeroConsignatario varchar(7)
+		)
+
+		insert into @ArchivoNumeroConsignatario
+		select
+			T.NumeroConsignatario
+		from
+			@TablaArchivo T
+		inner join
+			dbo.tbl_Archivos A on T.NumeroConsignatario = A.NumeroConsignatario
+		where
+			T.NumeroConsignatario in (A.NumeroConsignatario)
+
+		if((select count(*) from @ArchivoNumeroConsignatario) < 1)
+		begin
+
+			declare @NumArchivo int = (select NumeroArchivo = max(NumeroArchivo) from dbo.tbl_Archivos) + 1
+
+			insert into dbo.tbl_Archivos(NumeroGuia, NumeroConsignatario, NumeroCajas, Pares, Ciudad, NumeroArchivo, Estatus, Fecha, Nombre)
+			select
+				NumeroGuia
+				, NumeroConsignatario
+				, NumeroCajas
+				, Pares
+				, Ciudad
+				, NumArchivo = @NumArchivo
+				, Estatus = 0
+				, Fecha = getdate()
+				, Nombre = convert(varchar(6), 1) + ' Charly ' + convert(varchar(12), getdate())
+			from
+				@TablaArchivo
+
+			--update dbo.tbl_Archivos set NumeroArchivo = @NumArchivo, Estatus = 0 where NumeroArchivo < 1
+
+			select * from @TablaArchivo
+		end
+		else
+		begin
+			select
+				T.*
+			from
+				@TablaArchivo T
+			inner join
+				@ArchivoNumeroConsignatario A on A.NumeroConsignatario = T.NumeroConsignatario
+		end
+
+		commit transaction
+    end try
+    begin catch
+        
+		if XACT_STATE() <> 0
+		begin
+			rollback
+		end
+
+        insert into Jiricuicho.dbo.tbl_LogError
+		select
+			Usuario = @Usuario
+			, Proceso = 'Jiricuicho.dbo.usp_CargarArchivo'
+			, Fecha = getdate()
+			, ErrorNumber = ERROR_NUMBER()  
+			, ErrorSeverity = ERROR_SEVERITY()
+			, ErrorState = ERROR_STATE()
+			, ErrorProcedure = ERROR_PROCEDURE()
+			, ErrorLine = ERROR_LINE()
+			, ErrorMessage = ERROR_MESSAGE()
+		
+		where
+			@Usuario <> ''
+
+		select
+			ErrorNumber = ERROR_NUMBER()
+			, Usuario = @Usuario
+			, Proceso = 'Jiricuicho.dbo.usp_CargarArchivo'
+			, Fecha = getdate()
+			, ErrorSeverity = ERROR_SEVERITY()
+			, ErrorState = ERROR_STATE()
+			, ErrorProcedure = ERROR_PROCEDURE()
+			, ErrorLine = ERROR_LINE()
+			, ErrorMessage = ERROR_MESSAGE()
+
+    end catch
+end
